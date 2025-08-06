@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search Item Near Me</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f0f2f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input {
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .result {
+      margin-top: 2rem;
+    }
+    .shop {
+      padding: 1rem;
+      background: #f9f9f9;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Find Party Items Near You</h2>
+    <input type="text" id="item" placeholder="Enter item name (e.g. balloons)" required />
+    <input type="number" id="lat" placeholder="Your Latitude" step="any" required />
+    <input type="number" id="lng" placeholder="Your Longitude" step="any" required />
+    <button onclick="searchItem()">Search</button>
+
+    <div class="result" id="results"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://ytrrtgbhigezgoyjefas.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0cnJ0Z2JoaWdlemdveWplZmFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNzA0MDUsImV4cCI6MjA2ODk0NjQwNX0.2sdC7c5U8MUvwSBoCYBYnyvVEoddWtthLhIu3dye56Y";
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    async function searchItem() {
+      const itemName = document.getElementById("item").value.trim().toLowerCase();
+      const userLat = parseFloat(document.getElementById("lat").value);
+      const userLng = parseFloat(document.getElementById("lng").value);
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/items?select=*,shops(*)&name=ilike.*${itemName}*`, {
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Error searching for items");
+        return;
+      }
+
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+
+      if (data.length === 0) {
+        resultsDiv.innerHTML = "<p>No matching items found nearby.</p>";
+        return;
+      }
+
+      // Add distance and sort
+      const itemsWithDistance = data.map(item => {
+        const shop = item.shops;
+        const distance = getDistance(userLat, userLng, shop.latitude, shop.longitude);
+        return { ...item, distance };
+      });
+
+      itemsWithDistance.sort((a, b) => a.distance - b.distance);
+
+      itemsWithDistance.forEach(item => {
+        const shop = item.shops;
+        const div = document.createElement("div");
+        div.className = "shop";
+        div.innerHTML = `
+          <h3>${shop.name}</h3>
+          <p><strong>Item:</strong> ${item.name}</p>
+          <p><strong>Available:</strong> ${item.quantity}</p>
+          <p><strong>Price:</strong> ₹${item.price}</p>
+          <p><strong>Address:</strong> ${shop.address}</p>
+          <p><strong>Distance:</strong> ${item.distance.toFixed(2)} km</p>
+        `;
+        resultsDiv.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
