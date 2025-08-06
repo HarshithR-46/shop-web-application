@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Shop & Items</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f0f2f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, textarea {
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .item-group {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+    .success {
+      color: green;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Add Shop & Items</h2>
+    <input type="text" id="shopName" placeholder="Shop Name" required />
+    <textarea id="address" placeholder="Shop Address"></textarea>
+    <input type="number" id="latitude" placeholder="Latitude" step="any" required />
+    <input type="number" id="longitude" placeholder="Longitude" step="any" required />
+
+    <h3>Items</h3>
+    <div id="items-container">
+      <div class="item-group">
+        <input type="text" placeholder="Item Name" class="item-name" required />
+        <input type="number" placeholder="Quantity" class="item-quantity" required />
+        <input type="number" placeholder="Price" class="item-price" required />
+      </div>
+    </div>
+    <button type="button" onclick="addItemField()">➕ Add Another Item</button>
+
+    <button onclick="addShop()">Add Shop & Items</button>
+    <div id="message" class="success"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://ytrrtgbhigezgoyjefas.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0cnJ0Z2JoaWdlemdveWplZmFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNzA0MDUsImV4cCI6MjA2ODk0NjQwNX0.2sdC7c5U8MUvwSBoCYBYnyvVEoddWtthLhIu3dye56Y";
+
+    function addItemField() {
+      const container = document.getElementById("items-container");
+      const div = document.createElement("div");
+      div.classList.add("item-group");
+      div.innerHTML = `
+        <input type="text" placeholder="Item Name" class="item-name" required />
+        <input type="number" placeholder="Quantity" class="item-quantity" required />
+        <input type="number" placeholder="Price" class="item-price" required />
+      `;
+      container.appendChild(div);
+    }
+
+    async function addShop() {
+      const shopName = document.getElementById("shopName").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const latitude = parseFloat(document.getElementById("latitude").value);
+      const longitude = parseFloat(document.getElementById("longitude").value);
+
+      if (!shopName || isNaN(latitude) || isNaN(longitude)) {
+        alert("Please fill all required shop details.");
+        return;
+      }
+
+      // 1. Add the shop
+      const shopRes = await fetch(`${SUPABASE_URL}/rest/v1/shops`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({
+          name: shopName,
+          address,
+          latitude,
+          longitude
+        })
+      });
+
+      const shopData = await shopRes.json();
+      if (!shopRes.ok) {
+        alert("Failed to add shop");
+        console.error(shopData);
+        return;
+      }
+
+      const shopId = shopData[0].shop_id;
+
+      // 2. Collect all item fields
+      const itemNames = document.querySelectorAll(".item-name");
+      const itemQuantities = document.querySelectorAll(".item-quantity");
+      const itemPrices = document.querySelectorAll(".item-price");
+
+      const itemsToAdd = [];
+
+      for (let i = 0; i < itemNames.length; i++) {
+        const name = itemNames[i].value.trim();
+        const quantity = parseInt(itemQuantities[i].value);
+        const price = parseFloat(itemPrices[i].value);
+        if (!name || isNaN(quantity) || isNaN(price)) continue;
+
+        itemsToAdd.push({ name, quantity, price });
+      }
+
+      // 3. Add each item to the shop
+      for (const item of itemsToAdd) {
+        await fetch(`${SUPABASE_URL}/rest/v1/items`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`
+          },
+          body: JSON.stringify({
+            shop_id: shopId,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+          })
+        });
+      }
+
+      document.getElementById("message").textContent = "Shop and all items added successfully!";
+    }
+  </script>
+</body>
+</html>
