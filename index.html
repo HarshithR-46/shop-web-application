@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Party Item Ordering</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      height: 100vh;
+      background: black;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Space Background with Stars */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(white 1px, transparent 1px), radial-gradient(white 1px, transparent 1px);
+      background-position: 0 0, 50px 50px;
+      background-size: 100px 100px;
+      z-index: 0;
+      animation: moveStars 60s linear infinite;
+      opacity: 0.3;
+    }
+
+    @keyframes moveStars {
+      0% { background-position: 0 0, 50px 50px; }
+      100% { background-position: 1000px 1000px, 1050px 1050px; }
+    }
+
+    .container {
+      display: flex;
+      gap: 2rem;
+      z-index: 1;
+      position: relative;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .box {
+      width: 280px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      color: white;
+      text-align: center;
+      padding: 2rem;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+
+    .box:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
+    }
+
+    .box h2 {
+      margin-top: 1rem;
+      font-size: 1.8rem;
+    }
+
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .box {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="box" onclick="location.href='search.html'">
+      <div class="icon">🧍</div>
+      <h2>User</h2>
+      <p>Click here to search and order party items from nearby shops.</p>
+    </div>
+
+    <div class="box" onclick="location.href='add-shop.html'">
+      <div class="icon">🏪</div>
+      <h2>Shop Owner</h2>
+      <p>Click here to add your shop and manage your item listings.</p>
+    </div>
+  </div>
+</body>
+</html>
