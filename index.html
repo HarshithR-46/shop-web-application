@@ -11,44 +11,29 @@
       box-sizing: border-box;
     }
 
-    body {
+    html, body {
+      height: 100%;
       font-family: 'Segoe UI', sans-serif;
-      height: 100vh;
       background: black;
       overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
     }
 
-    /* Space Background with Stars */
-    body::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(white 1px, transparent 1px), radial-gradient(white 1px, transparent 1px);
-      background-position: 0 0, 50px 50px;
-      background-size: 100px 100px;
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
       z-index: 0;
-      animation: moveStars 60s linear infinite;
-      opacity: 0.3;
-    }
-
-    @keyframes moveStars {
-      0% { background-position: 0 0, 50px 50px; }
-      100% { background-position: 1000px 1000px, 1050px 1050px; }
     }
 
     .container {
-      display: flex;
-      gap: 2rem;
-      z-index: 1;
       position: relative;
-      flex-wrap: wrap;
+      z-index: 1;
+      display: flex;
       justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      height: 100%;
+      flex-wrap: wrap;
     }
 
     .box {
@@ -89,6 +74,10 @@
   </style>
 </head>
 <body>
+  <!-- Animated space stars background -->
+  <canvas id="starCanvas"></canvas>
+
+  <!-- Foreground UI -->
   <div class="container">
     <div class="box" onclick="location.href='search.html'">
       <div class="icon">🧍</div>
@@ -102,5 +91,66 @@
       <p>Click here to add your shop and manage your item listings.</p>
     </div>
   </div>
+
+  <!-- JavaScript: Create Random Star Animation -->
+  <script>
+    const canvas = document.getElementById("starCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let stars = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      createStars(); // recreate stars on resize
+    });
+
+    function createStars() {
+      stars = [];
+      const numStars = 300;
+
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.5 + 0.5,
+          speed: Math.random() * 0.3 + 0.1,
+          alpha: Math.random() * 0.5 + 0.5
+        });
+      }
+    }
+
+    function animateStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "white";
+
+      stars.forEach((star) => {
+        ctx.beginPath();
+        ctx.globalAlpha = star.alpha;
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // move star downward
+        star.y += star.speed;
+
+        // if it goes off screen, reset to top
+        if (star.y > canvas.height) {
+          star.y = 0;
+          star.x = Math.random() * canvas.width;
+        }
+      });
+
+      requestAnimationFrame(animateStars);
+    }
+
+    // Start
+    resizeCanvas();
+    createStars();
+    animateStars();
+  </script>
 </body>
 </html>
