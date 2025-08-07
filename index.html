@@ -94,14 +94,14 @@
 </head>
 <body>
 
-  <!-- Planets -->
+  <!-- Floating planets -->
   <div class="planet" style="top: 80%; left: -60px;"></div>
   <div class="planet" style="top: 60%; left: -120px; animation-delay: 10s;"></div>
 
-  <!-- Canvas for stars & shooting stars -->
+  <!-- Stars & shooting stars canvas -->
   <canvas id="starCanvas"></canvas>
 
-  <!-- Foreground content -->
+  <!-- UI -->
   <div class="container">
     <div class="box" onclick="location.href='search.html'">
       <div class="icon">🧍</div>
@@ -115,7 +115,7 @@
     </div>
   </div>
 
-  <!-- JavaScript: stars, shooting stars -->
+  <!-- Script: Realistic starfield & shooting stars -->
   <script>
     const canvas = document.getElementById("starCanvas");
     const ctx = canvas.getContext("2d");
@@ -127,11 +127,6 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
-
-    window.addEventListener("resize", () => {
-      resizeCanvas();
-      createStars();
-    });
 
     function createStars() {
       stars = [];
@@ -150,21 +145,40 @@
     function createShootingStar() {
       shootingStars.push({
         x: Math.random() * canvas.width,
-        y: 0,
-        length: Math.random() * 300 + 100,
-        speed: Math.random() * 8 + 4,
-        size: Math.random() * 1.5 + 0.5,
-        alpha: 1
+        y: Math.random() * canvas.height * 0.5,
+        length: Math.random() * 80 + 100,
+        speed: Math.random() * 12 + 6,
+        angle: Math.random() * (Math.PI / 5) + Math.PI / 4,
+        size: Math.random() * 1.5 + 1,
+        life: 1.0
       });
-
-      // limit shooting stars in memory
-      if (shootingStars.length > 10) shootingStars.shift();
     }
 
-    function animateStars() {
+    function drawShootingStar(star) {
+      const dx = Math.cos(star.angle) * star.length;
+      const dy = Math.sin(star.angle) * star.length;
+
+      // Tail
+      const gradient = ctx.createLinearGradient(star.x, star.y, star.x - dx, star.y - dy);
+      gradient.addColorStop(0, `rgba(255,255,255,${star.life})`);
+      gradient.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = star.size;
+      ctx.beginPath();
+      ctx.moveTo(star.x, star.y);
+      ctx.lineTo(star.x - dx, star.y - dy);
+      ctx.stroke();
+
+      // Head (glow)
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255,255,255,${star.life})`;
+      ctx.arc(star.x, star.y, star.size * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw normal stars
       stars.forEach(star => {
         ctx.beginPath();
         ctx.globalAlpha = star.alpha;
@@ -178,32 +192,29 @@
         }
       });
 
-      // Draw shooting stars
       shootingStars.forEach((s, i) => {
-        ctx.beginPath();
-        ctx.strokeStyle = `rgba(255,255,255,${s.alpha})`;
-        ctx.lineWidth = s.size;
-        ctx.moveTo(s.x, s.y);
-        ctx.lineTo(s.x - s.length, s.y + s.length);
-        ctx.stroke();
-
-        s.x += s.speed;
-        s.y += s.speed;
-        s.alpha -= 0.01;
-
-        if (s.alpha <= 0) {
-          shootingStars.splice(i, 1);
-        }
+        drawShootingStar(s);
+        s.x += Math.cos(s.angle) * s.speed;
+        s.y += Math.sin(s.angle) * s.speed;
+        s.life -= 0.01;
+        if (s.life <= 0) shootingStars.splice(i, 1);
       });
 
-      requestAnimationFrame(animateStars);
+      requestAnimationFrame(animate);
     }
 
-    // Start everything
+    // Init
     resizeCanvas();
     createStars();
-    animateStars();
-    setInterval(createShootingStar, 2000); // every 2 sec
+    animate();
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      createStars();
+    });
+
+    setInterval(() => {
+      if (Math.random() < 0.7) createShootingStar();
+    }, 2500);
   </script>
 </body>
 </html>
